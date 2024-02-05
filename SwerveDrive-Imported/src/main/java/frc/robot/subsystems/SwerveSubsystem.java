@@ -6,15 +6,17 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix.sensors.WPI_PigeonIMU;
 //import com.ctre.phoenix.sensors.CANCoder;
-import com.ctre.phoenix.sensors.CANCoderJNI;
 
+import com.ctre.phoenix6.hardware.CANcoder;
 //import com.ctre.phoenix.sensors.CANCoder;
-//import com.ctre.phoenix.sensors.WPI_Pigeon2;
+import com.ctre.phoenix6.hardware.Pigeon2;
 import com.revrobotics.CANSparkMax;
 //import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -35,11 +37,11 @@ public class SwerveSubsystem extends SubsystemBase {
   CANSparkMax backRightDriver;
   CANSparkMax backRightTurner;
 
-  CANCoderJNI fLSensor;
-  CANCoderJNI fRSensor;
-  CANCoderJNI bLSensor;
-  CANCoderJNI bRSensor;
-  WPI_PigeonIMU pigeon;
+  CANcoder fLSensor;
+  CANcoder fRSensor;
+  CANcoder bLSensor;
+  CANcoder bRSensor;
+  Pigeon2 pigeon;
 
   double strafeMagnatude;
   double strafeDirection;
@@ -60,6 +62,12 @@ public class SwerveSubsystem extends SubsystemBase {
   
   PIDController directionCorrector;
   PIDController rotateToDegreeController;
+  PIDController yDisplacementController;
+  PIDController xDisplacementController;
+  double yDisplacement;
+  double xDisplacement;
+  double yAcceleration;
+  double xAcceleration;
   double directionCorrectorValue;
 
   Vector frontLeftVector;
@@ -70,6 +78,19 @@ public class SwerveSubsystem extends SubsystemBase {
 
   boolean isRotating;
   double originalInstance;
+  Timer timer;
+  double lastTime;
+  double currentTime;
+  double xiVelocity;
+  double xfVelocity;
+  double yiVelocity;
+  double yfvelocity;
+  double dx;
+  double dy;
+  boolean highSpeed;
+  double strafeMultiplier;
+  SwerveOdometer odometer;
+
 
   public SwerveSubsystem(){
     //Change device ID to the normal orientation
@@ -87,25 +108,41 @@ public class SwerveSubsystem extends SubsystemBase {
     directionCorrector.setTolerance(0.01);
     rotateToDegreeController.enableContinuousInput(0,360);
     rotateToDegreeController.setTolerance(0.006);
+    yDisplacementController = new PIDController(0,0,0);
+    xDisplacementController = new PIDController(0,0,0);
+    yDisplacementController.setTolerance(0.003);
+    xDisplacementController.setTolerance(0.003);
+    yDisplacement = 0;
+    xDisplacement = 0;
+    yAcceleration = 0;
+    xAcceleration = 0;
+    timer = new Timer();
+    xiVelocity = 0;
+    xfVelocity = 0;
+    strafeMultiplier = 0;
+    
+
+    
+
     
     instance = true;
     directionCorrectorValue = 0;
-    fLSensor = new CANCoderJNI();//24
-    fLSensor.Create(24, getName());
-    fRSensor = new CANCoderJNI();//21
-    fRSensor.Create(21, getName());
-    bLSensor = new CANCoderJNI();//23
-    bLSensor.Create(23, getName());
-    bRSensor = new CANCoderJNI();//22
-    bRSensor.Create(22, getName());
+    fLSensor = new CANcoder(24);//24
+ 
+    fRSensor = new CANcoder(21);//21
+
+    bLSensor = new CANcoder(23);//23
+
+    bRSensor = new CANcoder(22);//22
     frontLeftModule = new SwerveModule(frontLeftDriver, frontLeftTurner,fLSensor);
     frontRightModule = new SwerveModule(frontRightDriver, frontRightTurner,fRSensor);
     backLeftModule = new SwerveModule(backLeftDriver, backLeftTurner,bLSensor);
     backRightModule = new SwerveModule(backRightDriver, backRightTurner,bRSensor);
-    pigeon = new WPI_PigeonIMU(25);//SET RIGHT DEVICE NUMBER
+    pigeon = new Pigeon2(25);//SET RIGHT DEVICE NUMBER
     once = true;
     strafeMagnatude = 0;
     strafeDirection = 0;
+    highSpeed = false;
 
     combinedMagnatude = 0;
     combinedDirection = 0;
@@ -114,7 +151,13 @@ public class SwerveSubsystem extends SubsystemBase {
     isRotating = true;
     targetRobotDegree = 0;
     originalDegree = 0;
+    lastTime = 0;
+    currentTime = 0;
+    dx = 0;
+    dy = 0;
+    odometer = new SwerveOdometer();
   }
+
   public void drive (double strafeMagnatude1,double strafeDirection1,double rotationalMagnatude1){
     this.strafeMagnatude = strafeMagnatude1 * 0.5;
     this.strafeDirection = strafeDirection1 - degreeOffset;
@@ -129,7 +172,7 @@ public class SwerveSubsystem extends SubsystemBase {
     }
     else{
       isRotating = false;
-      rotationalMagnatude = directionCorrectorValue * 0.5; //AAAAAAAAAAAAAAAAAAAAAAAAA
+      rotationalMagnatude = directionCorrectorValue * 0.5;
     }
     if (strafeMagnatude != 0 && rotationalMagnatude !=0){
       driveVector = new Vector(strafeMagnatude,strafeDirection, true);
@@ -154,6 +197,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
       frontLeftModule.drive(frontLeftVector.getMagnatude(),frontLeftVector.getDegree());
       frontRightModule.drive(-frontRightVector.getMagnatude(),frontRightVector.getDegree());
+      //System.out.println(frontRightVector.getDegree());
       backLeftModule.drive(backLeftVector.getMagnatude(),backLeftVector.getDegree());
       backRightModule.drive(backRightVector.getMagnatude(),backRightVector.getDegree());
     }
@@ -162,6 +206,7 @@ public class SwerveSubsystem extends SubsystemBase {
       frontRightModule.drive(-strafeMagnatude,strafeDirection);
       backLeftModule.drive(strafeMagnatude,strafeDirection);
       backRightModule.drive(strafeMagnatude,strafeDirection);
+      
     }
     else if (rotationalMagnatude != 0){
       if (rotationalMagnatude<0){
@@ -177,11 +222,24 @@ public class SwerveSubsystem extends SubsystemBase {
         backLeftModule.drive(rotationalMagnatude,225);
         backRightModule.drive(rotationalMagnatude,315);
       }
+      
     }
+    
+  }
+  public void autoDrive(double xfeet,double yfeet,double rotation){
+    double xMeters = xfeet/3.28084;
+    double yMeters = yfeet/3.28084;
+    double xCalculate = xDisplacementController.calculate(dx,xMeters);
+    double yCalculate = yDisplacementController.calculate(dy,yMeters);
+    Vector vector = new Vector(xCalculate,yCalculate);
+    double rCalculate = driveToDegree((getDegreeOffset()*-1),rotation);
+    drive(vector.getMagnatude(),vector.getDegree(),rCalculate);
   }
   public double getAbsoluteRotation(){
-    return pigeon.getAbsoluteCompassHeading();//WHCH WAY DOES IT ROTATE
+    //return pigeon.getAbsoluteCompassHeading();//WHCH WAY DOES IT ROTATE
+    return pigeon.getAngle();
   }
+  
   public double driveToDegree(double currentDegree, double targetDegree){
     double value = 0;
     rotateToDegreeController.calculate(currentDegree,targetDegree);
@@ -203,6 +261,21 @@ public class SwerveSubsystem extends SubsystemBase {
     }
     return v;
   }
+  public void toggleChangeSpeed(){
+    highSpeed = !highSpeed;
+    if (highSpeed){
+      strafeMultiplier = 0.90;
+    }
+    else{
+      strafeMultiplier = 0.5;
+    }
+  }
+  public double getXDisplacement(){
+    return xDisplacement;
+  }
+  public double getYDisplacement(){
+    return yDisplacement;
+  }
   @Override
   public void periodic() {
     if (once){
@@ -211,10 +284,12 @@ public class SwerveSubsystem extends SubsystemBase {
       if (originalDegree < 0){
         originalDegree += 360;
       }
+      timer.start();
       once = false;
+      
     }
-    degreeOffset = pigeon.getAngle();
-    degreeOffset-= originalDegree;
+    //System.out.println(pigeon.getAngle());
+    degreeOffset = pigeon.getAngle()-originalDegree;
     degreeOffset = degreeOffset % 360;
     if (degreeOffset < 0){
       degreeOffset += 360;
@@ -222,6 +297,7 @@ public class SwerveSubsystem extends SubsystemBase {
     degreeOffset = -degreeOffset;
     degreeOffset += 360;
     degreeOffset = degreeOffset % 360;
+    
     if (!isRotating){
       if (instance){
         originalInstance = degreeOffset;
@@ -241,6 +317,35 @@ public class SwerveSubsystem extends SubsystemBase {
     else{
       instance = true;
     }  
+    /*if (timer.get()>.25){
+      double xA = pigeon.getAccelerationY().getValueAsDouble();
+      double yA = pigeon.getAccelerationX().getValueAsDouble()-0.03;
+      if (yA>-0.0035 && yA < 0.0035){//0.0035
+        yA = 0;
+      }
+      if (yA<0){
+        System.out.println("!!!!");
+      }
+      xAcceleration = xA * 9.80665;
+      yAcceleration = yA* 9.80665;
+      
+      dx += (xiVelocity * timer.get()) + ((1.0/2.0) * xAcceleration * Math.pow(timer.get(),2));
+      xiVelocity += xAcceleration * timer.get();
+      dy += (yiVelocity * timer.get()) + ((1.0/2.0) * yAcceleration * Math.pow(timer.get(),2));
+      yiVelocity += yAcceleration * timer.get();
+      
+      SmartDashboard.putNumber("TIME",timer.get());
+      SmartDashboard.putNumber("y Acceleration",yAcceleration);
+      SmartDashboard.putNumber("y distance",dy);
+      
+      timer.reset();
+      timer.start();
+    }*/
+    //Vector flm = new Vector()
+
+    
+    
+    //System.out.println(xiVelocity);
     //SmartDashboard.putNumber("MODULE CALCULATE:",frontLeftModule.getCalculate());
     SmartDashboard.putNumber("TARGET STRAFE DEGREE:",strafeDirection);
     SmartDashboard.putNumber("CURRENT MODULE DEGREE", frontLeftModule.getAbsolutePosition());
@@ -249,5 +354,6 @@ public class SwerveSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("front Right speed",frontRightModule.getSpeed());
     //SmartDashboard.putNumber("Current Inverted: ", frontLeftModule.getInvertedAbsolutePosition());
     //SmartDashboard.putNumber("Current Rotational Magnatude:", rotationalMagnatude);
+    
   }
 }

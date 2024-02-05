@@ -6,7 +6,8 @@ public class Vector {
     double magnatude;
     double degree;
     public Vector(double x, double y){
-        array = new double[2];
+        xyreset(x,y);
+        /*array = new double[2];
         this.x = x;
         this.y = y;
         array[0] = x;
@@ -14,6 +15,51 @@ public class Vector {
         this.magnatude = Math.abs(Math.sqrt(Math.pow(x,2) + Math.pow(y,2)));
         degree = Math.abs(Math.toDegrees(Math.atan(Math.abs(x)/Math.abs(y))));
         
+        if (x>0){
+            degree = 180 + degree;
+            if (y>0){
+                degree = + 180 - degree;
+            }
+        }
+        else if(x<0){
+            if (y<0){
+                degree = 180 - degree;
+            }
+        }
+        else if (y==0){
+            if (x>0){
+                degree = 270;
+            }
+            else if (x<0){
+                degree = 90;
+            }
+            else{
+                degree = 0;
+            }
+        }
+        else if (x==0){
+            if (y>0){
+                degree = 0;
+            }
+            else if (y<0){
+                degree = 180;
+            }
+            else{
+                degree = 0;
+            }
+        }
+        if (degree < 0){
+            degree += 360;
+        }*/
+    }
+    public void xyreset(double x, double y){
+        array = new double[2];
+        this.x = x;
+        this.y = y;
+        array[0] = x;
+        array[1] = y;
+        this.magnatude = Math.abs(Math.sqrt(Math.pow(x,2) + Math.pow(y,2)));
+        degree = Math.abs(Math.toDegrees(Math.atan(Math.abs(x)/Math.abs(y))));
         if (x>0){
             degree = 180 + degree;
             if (y>0){
@@ -97,10 +143,25 @@ public class Vector {
     }
     public double getVectorX(){
         return x;
+        
     }
+    
     public double getVectorY(){
         return y;
     }
+    public void setVectorX(double xx){
+        xyreset(x + xx,y);
+    }
+    public void setVectorY(double yy){
+        xyreset(x, y+ yy);
+    }
+    public void addVectorX(double xx){
+        xyreset(x + xx, y);
+    }
+    public void addVectorY(double yy){
+        xyreset(x ,y + yy);
+    }
+
     public double getDegree(){
         return degree;
     }

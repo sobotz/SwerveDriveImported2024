@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
  * constants. This class should not be used for any other purpose. All constants should be declared
@@ -17,12 +19,14 @@ public final class Constants {
     public static final double kP = 0.0046;
     public static final double kI = 0.0;
     public static final double kD = 0.0;
-    public static final double rKP = 0.0055;
+    public static final double rKP = 0.03;
     public static final double rKI = 0.0;
     public static final double rKD = 0.0;
-    public static final double frontLeftSensor = 168.896;
-    public static final double frontRightSensor = 323.37;
-    public static final double backLeftSensor = 288.4;
-    public static final double backRightSensor = 25.899;
+    public static final double frontLeftSensor = 257.896;
+    public static final double frontRightSensor = 50.37;
+    public static final double backLeftSensor = 17.4;
+    public static final double backRightSensor = 115.899;
+    public static final double robotSideLength = 24.25;//INCH
+    public static final double robotWheelDiameter = 4;//INCH
   }
 }

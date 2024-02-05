@@ -39,9 +39,6 @@ public class RobotContainer {
     m_exampleSubsystem = new ExampleSubsystem();
     m_driverController = new Joystick(0);
     m_driveCommand = new DriveCommand(m_swerveSubsystem,m_driverController);
-    
-
-  
     configureBindings();
   }
 

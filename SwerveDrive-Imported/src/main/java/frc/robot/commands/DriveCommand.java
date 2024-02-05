@@ -47,14 +47,18 @@ public class DriveCommand extends Command {
     }
   
     rotationMagnatude = m_swerve.driveToDegree(degreeOffset,v.getDegree());
+    if (x==0 && y == 0){
+      rotationMagnatude = 0;
+    }
     if (strafeTargetDegree < 0) {
       strafeTargetDegree += 360;
     }
+    
 
     strafeTargetDegree = 360 - strafeTargetDegree;
-    // strafeTargetDegree = 0;
+    //strafeTargetDegree = 0;
     // rotationMagnatude = 0;
-    // strafeMagnatude = 0.1;
+    //strafeMagnatude = 0.1;
     m_swerve.drive(strafeMagnatude, strafeTargetDegree, rotationMagnatude);
   }
 

@@ -1,7 +1,7 @@
 package frc.robot.subsystems;
 //import com.ctre.phoenix.motorcontrol.can.TalonFX;
 //import com.ctre.phoenix.sensors.CANCoder;
-import com.ctre.phoenix.sensors.CANCoderJNI;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.controller.PIDController;
 import frc.robot.Constants;
@@ -12,7 +12,7 @@ public class SwerveModule {
     CANSparkMax turnMotor;
     PIDController turnController;
     
-    CANCoderJNI sensor;
+    CANcoder sensor;
 
     double speed;
     double invertedSpeed;
@@ -20,9 +20,11 @@ public class SwerveModule {
     double invertedAbsolutePosition;
     double targetDegree;
     double startingSensor;
+    double generalModuleDegree;
+    double generalModuleMagnatude;
     
     boolean inverted;
-    public SwerveModule(CANSparkMax driveMotor, CANSparkMax turnMotor, CANCoderJNI sensor){
+    public SwerveModule(CANSparkMax driveMotor, CANSparkMax turnMotor, CANcoder sensor){
         inverted = false;
         this.driveMotor = driveMotor;
         this.turnMotor = turnMotor;
@@ -44,7 +46,9 @@ public class SwerveModule {
         }
         turnController = new PIDController(Constants.SwerveDriveConstants.kP, Constants.SwerveDriveConstants.kI, Constants.SwerveDriveConstants.kD);
         turnController.enableContinuousInput(0, 360);
-        turnController.setTolerance(0.0005);
+        turnController.setTolerance(0.001);
+        generalModuleDegree = 0;
+        generalModuleMagnatude = 0;
     }
     public void drive(double speed, double targetDegree){
         this.speed = speed;
@@ -52,14 +56,31 @@ public class SwerveModule {
 
         this.targetDegree = targetDegree;
         turnController.setSetpoint(this.targetDegree);
-        this.absolutePosition = sensor.getAbsolutePosition() - startingSensor;
+        
+        double canCoderPosition = sensor.getAbsolutePosition().getValue();
+        if (canCoderPosition>0){
+            canCoderPosition *= 360;
+            canCoderPosition += 180;
+        }
+        else{
+            canCoderPosition *=-360;
+            canCoderPosition = 180-canCoderPosition;
+        }
+        //System.out.println(canCoderPosition);
+        //System.out.println(sensor.getAbsolutePosition().getValue());
+        this.absolutePosition = canCoderPosition-startingSensor;
+
         if (this.absolutePosition < 0){
             this.absolutePosition += 360;
         }
+        generalModuleDegree = absolutePosition;
+        
+        
         absolutePosition = Math.abs((this.absolutePosition+180) % 360);
         invertedAbsolutePosition = Math.abs((this.absolutePosition+180) % 360);
         if (!inverted){
             turnController.calculate(this.absolutePosition,this.targetDegree);
+            generalModuleDegree = absolutePosition;////////
             if (turnController.getPositionError()< 90){
                 turnMotor.set(-turnController.calculate(this.absolutePosition,this.targetDegree));
                 driveMotor.set(this.speed);
@@ -70,9 +91,11 @@ public class SwerveModule {
         }
         else{
             turnController.calculate(this.invertedAbsolutePosition,this.targetDegree);
+            generalModuleDegree = invertedAbsolutePosition;/////////
             if (turnController.getPositionError() < 90){
                 turnMotor.set(-turnController.calculate(invertedAbsolutePosition,this.targetDegree));
                 driveMotor.set(-this.speed);
+                
             }
             else{
                 inverted = false;
@@ -104,4 +127,10 @@ public class SwerveModule {
     public double getSpeed(){
         return speed;
     }
+    public double getGeneralModuleDegree(){
+        return generalModuleDegree;
+    }
+    /*public double getDriverMotorTicks(){
+        return
+    }*/
 }
