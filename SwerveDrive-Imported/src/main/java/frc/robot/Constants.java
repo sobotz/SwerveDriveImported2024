@@ -28,5 +28,6 @@ public final class Constants {
     public static final double backRightSensor = 115.899;
     public static final double robotSideLength = 24.25;//INCH
     public static final double robotWheelDiameter = 4;//INCH
+    public static final double rotationSensorTicksPerOneRotation = 8.06054;
   }
 }

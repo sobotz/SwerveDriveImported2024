@@ -4,18 +4,19 @@
 
 package frc.robot.subsystems;
 
-import com.ctre.phoenix.sensors.WPI_PigeonIMU;
+
 //import com.ctre.phoenix.sensors.CANCoder;
 
 import com.ctre.phoenix6.hardware.CANcoder;
 //import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix6.hardware.Pigeon2;
-import com.revrobotics.CANSparkMax;
-//import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.ctre.phoenix6.hardware.TalonFX;
+
+//import com.revrobotics.TalonFXLowLevel.MotorType;
+
 
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -28,14 +29,14 @@ public class SwerveSubsystem extends SubsystemBase {
   SwerveModule backLeftModule;
   SwerveModule backRightModule;
 
-  CANSparkMax frontLeftDriver;
-  CANSparkMax frontLeftTurner;
-  CANSparkMax frontRightDriver;
-  CANSparkMax frontRightTurner;
-  CANSparkMax backLeftDriver;
-  CANSparkMax backLeftTurner;
-  CANSparkMax backRightDriver;
-  CANSparkMax backRightTurner;
+  TalonFX frontLeftDriver;
+  TalonFX frontLeftTurner;
+  TalonFX frontRightDriver;
+  TalonFX frontRightTurner;
+  TalonFX backLeftDriver;
+  TalonFX backLeftTurner;
+  TalonFX backRightDriver;
+  TalonFX backRightTurner;
 
   CANcoder fLSensor;
   CANcoder fRSensor;
@@ -88,20 +89,24 @@ public class SwerveSubsystem extends SubsystemBase {
   double dx;
   double dy;
   boolean highSpeed;
+  boolean joystickOff;
   double strafeMultiplier;
   SwerveOdometer odometer;
 
 
+
   public SwerveSubsystem(){
     //Change device ID to the normal orientation
-    frontLeftDriver = new CANSparkMax(8,MotorType.kBrushless);
-    frontLeftTurner = new CANSparkMax(7,MotorType.kBrushless);
-    frontRightDriver = new CANSparkMax(2,MotorType.kBrushless);
-    frontRightTurner = new CANSparkMax(1,MotorType.kBrushless);
-    backLeftDriver = new CANSparkMax(6,MotorType.kBrushless);
-    backLeftTurner = new CANSparkMax(5,MotorType.kBrushless);
-    backRightDriver = new CANSparkMax(4,MotorType.kBrushless);
-    backRightTurner = new CANSparkMax(3,MotorType.kBrushless);
+    //kraken = new TalonFX(1);
+    frontLeftDriver = new TalonFX(2);
+    frontLeftTurner = new TalonFX(1);
+    frontRightDriver = new TalonFX(4);
+    frontRightTurner = new TalonFX(3);//CHANGE
+    backLeftDriver = new TalonFX(8);
+    backLeftTurner = new TalonFX(7);
+    backRightDriver = new TalonFX(6);
+    backRightTurner = new TalonFX(5);
+    frontRightDriver.setPosition(0);
     directionCorrector = new PIDController(Constants.SwerveDriveConstants.rKP,Constants.SwerveDriveConstants.rKI,Constants.SwerveDriveConstants.rKD);
     rotateToDegreeController = new PIDController(/*Constants.SwerveDriveConstants.rKP*/0.007,Constants.SwerveDriveConstants.rKI,Constants.SwerveDriveConstants.rKD);
     directionCorrector.enableContinuousInput(0, 360);
@@ -120,6 +125,7 @@ public class SwerveSubsystem extends SubsystemBase {
     xiVelocity = 0;
     xfVelocity = 0;
     strafeMultiplier = 0;
+    joystickOff = true;
     
 
     
@@ -174,7 +180,8 @@ public class SwerveSubsystem extends SubsystemBase {
       isRotating = false;
       rotationalMagnatude = directionCorrectorValue * 0.5;
     }
-    if (strafeMagnatude != 0 && rotationalMagnatude !=0){
+    
+    //if (strafeMagnatude != 0 || rotationalMagnatude !=0){
       driveVector = new Vector(strafeMagnatude,strafeDirection, true);
       //Rotational Vectors
       if (rotationalMagnatude<0){
@@ -195,13 +202,14 @@ public class SwerveSubsystem extends SubsystemBase {
       backLeftVector = backLeftVector.addVector(driveVector);
       backRightVector = backRightVector.addVector(driveVector);
 
-      frontLeftModule.drive(frontLeftVector.getMagnatude(),frontLeftVector.getDegree());
-      frontRightModule.drive(-frontRightVector.getMagnatude(),frontRightVector.getDegree());
+      frontLeftModule.drive(frontLeftVector.getMagnatude(),frontLeftVector.getDegree(),joystickOff);
+      frontRightModule.drive(-frontRightVector.getMagnatude(),frontRightVector.getDegree(),joystickOff);
       //System.out.println(frontRightVector.getDegree());
-      backLeftModule.drive(backLeftVector.getMagnatude(),backLeftVector.getDegree());
-      backRightModule.drive(backRightVector.getMagnatude(),backRightVector.getDegree());
-    }
-    else if (strafeMagnatude !=0 && rotationalMagnatude == 0){
+      backLeftModule.drive(backLeftVector.getMagnatude(),backLeftVector.getDegree(), joystickOff);
+      backRightModule.drive(backRightVector.getMagnatude(),backRightVector.getDegree(), joystickOff);
+    //}
+    /*else if (strafeMagnatude !=0 && rotationalMagnatude == 0){
+      //System.out.println("HELLO");
       frontLeftModule.drive(strafeMagnatude,strafeDirection);
       frontRightModule.drive(-strafeMagnatude,strafeDirection);
       backLeftModule.drive(strafeMagnatude,strafeDirection);
@@ -221,9 +229,8 @@ public class SwerveSubsystem extends SubsystemBase {
         frontRightModule.drive(-rotationalMagnatude,45);
         backLeftModule.drive(rotationalMagnatude,225);
         backRightModule.drive(rotationalMagnatude,315);
-      }
-      
-    }
+      }      
+    }*/
     
   }
   public void autoDrive(double xfeet,double yfeet,double rotation){
@@ -275,6 +282,9 @@ public class SwerveSubsystem extends SubsystemBase {
   }
   public double getYDisplacement(){
     return yDisplacement;
+  }
+  public void setJoystickOff(boolean joystickOff){
+    this.joystickOff = joystickOff;
   }
   @Override
   public void periodic() {
@@ -352,6 +362,8 @@ public class SwerveSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("Current Robot Degree", degreeOffset);
     SmartDashboard.putNumber("front left speed",frontLeftModule.getSpeed());
     SmartDashboard.putNumber("front Right speed",frontRightModule.getSpeed());
+    SmartDashboard.putNumber("front left Ticks", frontRightDriver.getPosition().getValueAsDouble());
+    //kraken.set(0.05);
     //SmartDashboard.putNumber("Current Inverted: ", frontLeftModule.getInvertedAbsolutePosition());
     //SmartDashboard.putNumber("Current Rotational Magnatude:", rotationalMagnatude);
     

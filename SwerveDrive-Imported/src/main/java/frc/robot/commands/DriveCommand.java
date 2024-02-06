@@ -18,10 +18,12 @@ public class DriveCommand extends Command {
   double strafeMagnatude;
   double strafeTargetDegree;
   double rotationMagnatude;
+  boolean joystickOff;
 
   public DriveCommand(SwerveSubsystem swerve, Joystick stick) {
     m_swerve = swerve;
     driverJoystick = stick;
+    joystickOff = true;
     addRequirements(m_swerve);
   }
 
@@ -50,6 +52,13 @@ public class DriveCommand extends Command {
     if (x==0 && y == 0){
       rotationMagnatude = 0;
     }
+    if (strafeMagnatude == 0 && (x == 0 && y == 0)){
+      joystickOff = true;
+    }
+    else{
+      joystickOff = false;
+    }
+    m_swerve.setJoystickOff(joystickOff);
     if (strafeTargetDegree < 0) {
       strafeTargetDegree += 360;
     }
@@ -57,8 +66,9 @@ public class DriveCommand extends Command {
 
     strafeTargetDegree = 360 - strafeTargetDegree;
     //strafeTargetDegree = 0;
-    // rotationMagnatude = 0;
+    //rotationMagnatude = 0;
     //strafeMagnatude = 0.1;
+    
     m_swerve.drive(strafeMagnatude, strafeTargetDegree, rotationMagnatude);
   }
 

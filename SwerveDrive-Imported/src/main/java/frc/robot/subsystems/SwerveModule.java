@@ -2,14 +2,15 @@ package frc.robot.subsystems;
 //import com.ctre.phoenix.motorcontrol.can.TalonFX;
 //import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix6.hardware.CANcoder;
-import com.revrobotics.CANSparkMax;
+import com.ctre.phoenix6.hardware.TalonFX;
+
 import edu.wpi.first.math.controller.PIDController;
 import frc.robot.Constants;
 
 public class SwerveModule {
     
-    CANSparkMax driveMotor;
-    CANSparkMax turnMotor;
+    TalonFX driveMotor;
+    TalonFX turnMotor;
     PIDController turnController;
     
     CANcoder sensor;
@@ -24,7 +25,7 @@ public class SwerveModule {
     double generalModuleMagnatude;
     
     boolean inverted;
-    public SwerveModule(CANSparkMax driveMotor, CANSparkMax turnMotor, CANcoder sensor){
+    public SwerveModule(TalonFX driveMotor, TalonFX turnMotor, CANcoder sensor){
         inverted = false;
         this.driveMotor = driveMotor;
         this.turnMotor = turnMotor;
@@ -50,7 +51,7 @@ public class SwerveModule {
         generalModuleDegree = 0;
         generalModuleMagnatude = 0;
     }
-    public void drive(double speed, double targetDegree){
+    public void drive(double speed, double targetDegree,boolean joystickOff){
         this.speed = speed;
         this.invertedSpeed = speed * -1;
 
@@ -82,8 +83,14 @@ public class SwerveModule {
             turnController.calculate(this.absolutePosition,this.targetDegree);
             generalModuleDegree = absolutePosition;////////
             if (turnController.getPositionError()< 90){
-                turnMotor.set(-turnController.calculate(this.absolutePosition,this.targetDegree));
-                driveMotor.set(this.speed);
+                if (!joystickOff){
+                    turnMotor.set(-turnController.calculate(this.absolutePosition,this.targetDegree));
+                    driveMotor.set(this.speed);
+                }
+                else{
+                    turnMotor.set(0);
+                    driveMotor.set(0);
+                }
             }
             else{
                 inverted = true;
@@ -93,9 +100,14 @@ public class SwerveModule {
             turnController.calculate(this.invertedAbsolutePosition,this.targetDegree);
             generalModuleDegree = invertedAbsolutePosition;/////////
             if (turnController.getPositionError() < 90){
-                turnMotor.set(-turnController.calculate(invertedAbsolutePosition,this.targetDegree));
-                driveMotor.set(-this.speed);
-                
+                if (!joystickOff){
+                    turnMotor.set(-turnController.calculate(this.invertedAbsolutePosition,this.targetDegree));
+                    driveMotor.set(-this.speed);
+                }
+                else{
+                    turnMotor.set(0);
+                    driveMotor.set(0);
+                }
             }
             else{
                 inverted = false;
