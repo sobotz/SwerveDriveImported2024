@@ -84,8 +84,8 @@ public class SwerveModule {
             generalModuleDegree = absolutePosition;////////
             if (turnController.getPositionError()< 90){
                 if (!joystickOff){
-                    turnMotor.set(-turnController.calculate(this.absolutePosition,this.targetDegree));
-                    driveMotor.set(this.speed);
+                    //turnMotor.set(-turnController.calculate(this.absolutePosition,this.targetDegree));
+                    //driveMotor.set(this.speed);
                 }
                 else{
                     turnMotor.set(0);
@@ -101,8 +101,8 @@ public class SwerveModule {
             generalModuleDegree = invertedAbsolutePosition;/////////
             if (turnController.getPositionError() < 90){
                 if (!joystickOff){
-                    turnMotor.set(-turnController.calculate(this.invertedAbsolutePosition,this.targetDegree));
-                    driveMotor.set(-this.speed);
+                    //turnMotor.set(-turnController.calculate(this.invertedAbsolutePosition,this.targetDegree));
+                    //driveMotor.set(-this.speed);
                 }
                 else{
                     turnMotor.set(0);

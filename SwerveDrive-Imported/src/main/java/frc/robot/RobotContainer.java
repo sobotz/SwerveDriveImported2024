@@ -7,12 +7,14 @@ package frc.robot;
 //import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.Autos;
 import frc.robot.commands.DriveCommand;
+import frc.robot.commands.ToggleSolenoidCommand;
 //import frc.robot.commands.ExampleCommand;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.SwerveSubsystem;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 /**
@@ -26,6 +28,7 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   SwerveSubsystem m_swerveSubsystem;
   DriveCommand m_driveCommand;
+  ToggleSolenoidCommand m_toggleSolenoid;
   //Joystick m_driverJoystick;
   private final ExampleSubsystem m_exampleSubsystem;
   
@@ -39,6 +42,7 @@ public class RobotContainer {
     m_exampleSubsystem = new ExampleSubsystem();
     m_driverController = new Joystick(0);
     m_driveCommand = new DriveCommand(m_swerveSubsystem,m_driverController);
+    m_toggleSolenoid = new ToggleSolenoidCommand(m_swerveSubsystem);
     configureBindings();
   }
 
@@ -52,6 +56,8 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
+    JoystickButton toggleSolenoidButton = new JoystickButton(m_driverController,1);
+    toggleSolenoidButton.whileTrue(m_toggleSolenoid);
     // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
     /*new Trigger(m_exampleSubsystem::exampleCondition)
         .onTrue(new ExampleCommand(m_exampleSubsystem));

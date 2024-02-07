@@ -16,8 +16,11 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.PneumaticHub;
 
 import edu.wpi.first.wpilibj.Timer;
+
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -28,6 +31,8 @@ public class SwerveSubsystem extends SubsystemBase {
   SwerveModule frontRightModule;
   SwerveModule backLeftModule;
   SwerveModule backRightModule;
+  DoubleSolenoid solenoid;
+  DoubleSolenoid solenoid2;
 
   TalonFX frontLeftDriver;
   TalonFX frontLeftTurner;
@@ -91,13 +96,18 @@ public class SwerveSubsystem extends SubsystemBase {
   boolean highSpeed;
   boolean joystickOff;
   double strafeMultiplier;
+  boolean toggleSolenoid;
   SwerveOdometer odometer;
+  PneumaticHub pneumaticHub;
 
 
 
   public SwerveSubsystem(){
     //Change device ID to the normal orientation
     //kraken = new TalonFX(1);
+    pneumaticHub = new PneumaticHub(1);
+    solenoid = pneumaticHub.makeDoubleSolenoid(0,1);
+    solenoid2 = pneumaticHub.makeDoubleSolenoid(2,3);
     frontLeftDriver = new TalonFX(2);
     frontLeftTurner = new TalonFX(1);
     frontRightDriver = new TalonFX(4);
@@ -117,6 +127,7 @@ public class SwerveSubsystem extends SubsystemBase {
     xDisplacementController = new PIDController(0,0,0);
     yDisplacementController.setTolerance(0.003);
     xDisplacementController.setTolerance(0.003);
+    pneumaticHub = new PneumaticHub(9);
     yDisplacement = 0;
     xDisplacement = 0;
     yAcceleration = 0;
@@ -126,11 +137,8 @@ public class SwerveSubsystem extends SubsystemBase {
     xfVelocity = 0;
     strafeMultiplier = 0;
     joystickOff = true;
-    
-
-    
-
-    
+    toggleSolenoid = false;
+    //pneumaticHub.enableCompressorAnalog(20, 30);
     instance = true;
     directionCorrectorValue = 0;
     fLSensor = new CANcoder(24);//24
@@ -162,6 +170,18 @@ public class SwerveSubsystem extends SubsystemBase {
     dx = 0;
     dy = 0;
     odometer = new SwerveOdometer();
+  }
+  public void toggleSolenoid(){
+    if (toggleSolenoid){
+      solenoid2.set(DoubleSolenoid.Value.kForward);
+      System.out.println("Forward");///goes to default
+    }
+    else{
+      solenoid2.set(DoubleSolenoid.Value.kReverse);
+      System.out.println("Reverse");//intake deploys piston extends
+      
+    }
+    toggleSolenoid = !toggleSolenoid;
   }
 
   public void drive (double strafeMagnatude1,double strafeDirection1,double rotationalMagnatude1){
@@ -363,9 +383,11 @@ public class SwerveSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("front left speed",frontLeftModule.getSpeed());
     SmartDashboard.putNumber("front Right speed",frontRightModule.getSpeed());
     SmartDashboard.putNumber("front left Ticks", frontRightDriver.getPosition().getValueAsDouble());
+    pneumaticHub.enableCompressorDigital();
     //kraken.set(0.05);
     //SmartDashboard.putNumber("Current Inverted: ", frontLeftModule.getInvertedAbsolutePosition());
     //SmartDashboard.putNumber("Current Rotational Magnatude:", rotationalMagnatude);
+    //System.out.println(pneumaticHub.getCompressor());
     
   }
 }
